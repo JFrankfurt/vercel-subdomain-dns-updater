@@ -20,5 +20,5 @@ docker.build:
 	docker build \
 		--no-cache \
 		$(PWD) \
-		-f .docker/Dockerfile \
+		-f Dockerfile \
 		-t $(IMAGE_NAME):latest
