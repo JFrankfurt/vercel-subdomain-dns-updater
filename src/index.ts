@@ -1,6 +1,6 @@
 import { config } from 'dotenv'
 import got from 'got'
-import publicIp from 'public-ip'
+import publicIp, { Options } from 'public-ip'
 import { CreateNewSubdomainRecordsArgs, VercelDomainRecordsResponse } from './types'
 
 config()
@@ -66,25 +66,38 @@ async function getCurrentDNSRecords() {
   }
 }
 async function updateSubdomainIp() {
-  const v4 = await publicIp.v4()
-  const v6 = await publicIp.v6()
+  let v4 = ''
+  try {
+    v4 = await publicIp.v4({ fallbackUrls: ['https://ifconfig.me/ip', 'http://ipinfo.io/ip', 'https://ipecho.net/plain'] })
+  } catch (error) {
+    console.error('v4 error', error)
+  }
+  let v6 = ''
+  try {
+    v6 = await publicIp.v6({ fallbackUrls: ['https://ifconfig.co/ip'] })
+  } catch (error) {
+    console.error('v6 error', error)
+  }
+  if (!v4 && !v6) {
+    return Promise.reject(new Error('No IP found'))
+  }
+
   const subdomain = process.env.SUBDOMAIN as string
   const { data } = await getCurrentDNSRecords()
   if (!data || typeof data === 'string') {
-    console.error('no data')
-    return
+    return Promise.reject(new Error('current DNS records not found'))
   }
   const ARecords = data.records.filter(record => record.type === 'A' && record.name === subdomain)
   const AAAARecords = data.records.filter(record => record.type === 'AAAA' && record.name === subdomain)
   const deleteOldRecords = [
     ...ARecords.map(record => {
-      if (record && record.value.toLowerCase() !== v4) {
+      if (v4 && record && record.value.toLowerCase() !== v4) {
         return deleteRecord(record.id)
       }
       return Promise.resolve(null)
     }),
     ...AAAARecords.map(record => {
-      if (record && record.value.toLowerCase() !== v6) {
+      if (v6 && record && record.value.toLowerCase() !== v6) {
         return deleteRecord(record.id)
       }
       return Promise.resolve(null)
@@ -109,18 +122,21 @@ async function updateSubdomainIp() {
     console.log(`updating out of date ${Object.keys(records).join(' ')} records`)
     await createNewSubdomainRecords({ ...records, subdomain })
   }
+
+  return Promise.resolve()
 }
 
 function main() {
   return new Promise((_resolve, reject) => {
-    const missingEnvVars = [
-      process.env.REFRESH_INTERVAL_SECONDS,
-      process.env.SUBDOMAIN,
-      process.env.VERCEL_TOKEN,
-      process.env.VERCEL_DOMAIN,
-    ].filter(envVar => !envVar)
+    const requiredEnvVars = {
+      REFRESH_INTERVAL_SECONDS: process.env.REFRESH_INTERVAL_SECONDS,
+      SUBDOMAIN: process.env.SUBDOMAIN,
+      VERCEL_TOKEN: process.env.VERCEL_TOKEN,
+      VERCEL_DOMAIN: process.env.VERCEL_DOMAIN,
+    }
+    const missingEnvVars = Object.entries(requiredEnvVars).map(([key, value]) => !value ? key : null).filter(Boolean)
     if (missingEnvVars.length) {
-      reject(new Error(`missing env vars: ${missingEnvVars}`))
+      reject(new Error(`missing a required env var: ${missingEnvVars.join(', ')}`))
     }
     const REFRESH_INTERVAL_SECONDS = parseInt(process.env.REFRESH_INTERVAL_SECONDS || '30', 10)
     setInterval(updateSubdomainIp, REFRESH_INTERVAL_SECONDS * 1000)
