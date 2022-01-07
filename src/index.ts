@@ -1,6 +1,6 @@
 import { config } from 'dotenv'
 import got from 'got'
-import publicIp, { Options } from 'public-ip'
+import publicIp from 'public-ip'
 import { CreateNewSubdomainRecordsArgs, VercelDomainRecordsResponse } from './types'
 
 config()
