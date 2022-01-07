@@ -68,7 +68,9 @@ async function getCurrentDNSRecords() {
 async function updateSubdomainIp() {
   let v4 = ''
   try {
-    v4 = await publicIp.v4({ fallbackUrls: ['https://ifconfig.me/ip', 'http://ipinfo.io/ip', 'https://ipecho.net/plain'] })
+    v4 = await publicIp.v4({
+      fallbackUrls: ['https://ifconfig.me/ip', 'http://ipinfo.io/ip', 'https://ipecho.net/plain'],
+    })
   } catch (error) {
     console.error('v4 error', error)
   }
@@ -134,7 +136,9 @@ function main() {
       VERCEL_TOKEN: process.env.VERCEL_TOKEN,
       VERCEL_DOMAIN: process.env.VERCEL_DOMAIN,
     }
-    const missingEnvVars = Object.entries(requiredEnvVars).map(([key, value]) => !value ? key : null).filter(Boolean)
+    const missingEnvVars = Object.entries(requiredEnvVars)
+      .map(([key, value]) => (!value ? key : null))
+      .filter(Boolean)
     if (missingEnvVars.length) {
       reject(new Error(`missing a required env var: ${missingEnvVars.join(', ')}`))
     }
