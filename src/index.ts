@@ -83,11 +83,17 @@ async function updateSubdomainIp() {
   if (!v4 && !v6) {
     return Promise.reject(new Error('No IP found'))
   }
+  if (!v4) {
+    return Promise.reject(new Error('No v4 IP found'))
+  }
+  if (!v6) {
+    return Promise.reject(new Error('No v6 IP found'))
+  }
 
   const subdomain = process.env.SUBDOMAIN as string
   const { data } = await getCurrentDNSRecords()
   if (!data || typeof data === 'string') {
-    return Promise.reject(new Error('current DNS records not found'))
+    return Promise.reject(new Error('failed to fetch dns records from vercel'))
   }
   const ARecords = data.records.filter(record => record.type === 'A' && record.name === subdomain)
   const AAAARecords = data.records.filter(record => record.type === 'AAAA' && record.name === subdomain)
@@ -105,8 +111,11 @@ async function updateSubdomainIp() {
       return Promise.resolve(null)
     }),
   ]
-
-  await Promise.all(deleteOldRecords)
+  try {
+    await Promise.all(deleteOldRecords)
+  } catch (error) {
+    console.error('deleteOldRecords error', error)
+  }
 
   const hasCorrectARecord = ARecords.find(record => record.value.toLowerCase() === v4)
   const hasCorrectAAAARecord = AAAARecords.find(record => record.value.toLowerCase() === v6)
