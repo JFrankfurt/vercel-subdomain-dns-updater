@@ -5,6 +5,10 @@ import { CreateNewSubdomainRecordsArgs, VercelDomainRecordsResponse } from './ty
 
 config()
 
+function logError({message, error}: {message?: string, error: any}){
+  console.error(message || 'oops: ', error)
+}
+
 async function createRecord(data: { name: string; type: 'A' | 'AAAA'; value: string }) {
   return got.post({
     url: `https://api.vercel.com/v2/domains/${process.env.VERCEL_DOMAIN}/records`,
@@ -61,7 +65,7 @@ async function getCurrentDNSRecords() {
       err: null,
     }
   } catch (error) {
-    console.error('getCurrentDNSRecords error')
+    logError({error})
     return { data: null, error }
   }
 }
@@ -72,28 +76,28 @@ async function updateSubdomainIp() {
       fallbackUrls: ['https://ifconfig.me/ip', 'http://ipinfo.io/ip', 'https://ipecho.net/plain'],
     })
   } catch (error) {
-    console.error('v4 error', error)
+    logError({message: 'v4 error', error})
   }
   let v6 = ''
   try {
     v6 = await publicIp.v6({ fallbackUrls: ['https://ifconfig.co/ip'] })
   } catch (error) {
-    console.error('v6 error', error)
+    logError({message: 'v6 error', error})
   }
   if (!v4 && !v6) {
-    return Promise.reject(new Error('No IP found'))
+    return logError({error: ('No IP found')})
   }
   if (!v4) {
-    return Promise.reject(new Error('No v4 IP found'))
+    return logError({error: ('No v4 IP found')})
   }
   if (!v6) {
-    return Promise.reject(new Error('No v6 IP found'))
+    return logError({error: ('No v6 IP found')})
   }
 
   const subdomain = process.env.SUBDOMAIN as string
   const { data } = await getCurrentDNSRecords()
   if (!data || typeof data === 'string') {
-    return Promise.reject(new Error('failed to fetch dns records from vercel'))
+    return logError({error: ('failed to fetch dns records from vercel')})
   }
   const ARecords = data.records.filter(record => record.type === 'A' && record.name === subdomain)
   const AAAARecords = data.records.filter(record => record.type === 'AAAA' && record.name === subdomain)
@@ -114,7 +118,7 @@ async function updateSubdomainIp() {
   try {
     await Promise.all(deleteOldRecords)
   } catch (error) {
-    console.error('deleteOldRecords error', error)
+    logError({message: 'deleteOldRecords error', error})
   }
 
   const hasCorrectARecord = ARecords.find(record => record.value.toLowerCase() === v4)
