@@ -9,50 +9,33 @@
     "src"
   ],
   "engines": {
-    "node": ">=10"
+    "node": ">=14"
   },
   "scripts": {
-    "dev": "nodemon dist/vercel-subdomain-ip-updater-1.esm.js",
-    "start": "tsdx watch",
-    "build": "tsdx build",
-    "test": "tsdx test",
-    "lint": "tsdx lint",
-    "prepare": "tsdx build",
-    "size": "size-limit",
-    "analyze": "size-limit --why"
+    "start": "node dist/index.js",
+    "dev": "tsc-watch --project . --outDir dist --onSuccess \"nodemon ./dist/index.js\"",
+    "build": "tsc --build tsconfig.json",
+    "lint": "eslint . --fix"
   },
   "peerDependencies": {},
   "husky": {
     "hooks": {
-      "pre-commit": "tsdx lint"
+      "pre-commit": "yarn lint"
     }
   },
-  "prettier": {
-    "printWidth": 120,
-    "semi": false,
-    "singleQuote": true,
-    "trailingComma": "es5"
-  },
-  "name": "vercel-subdomain-ip-updater-1",
+  "name": "vercel-subdomain-ip-updater",
   "author": "Jordan Frankfurt",
-  "module": "dist/vercel-subdomain-ip-updater-1.esm.js",
-  "size-limit": [
-    {
-      "path": "dist/vercel-subdomain-ip-updater-1.cjs.production.min.js",
-      "limit": "10 KB"
-    },
-    {
-      "path": "dist/vercel-subdomain-ip-updater-1.esm.js",
-      "limit": "10 KB"
-    }
-  ],
   "devDependencies": {
-    "@size-limit/preset-small-lib": "^7.0.5",
+    "@typescript-eslint/eslint-plugin": "^5.9.0",
+    "@typescript-eslint/parser": "^5.9.0",
+    "eslint": "^8.6.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-unused-imports": "^2.0.0",
     "husky": "^7.0.4",
     "nodemon": "^2.0.15",
-    "size-limit": "^7.0.5",
-    "tsdx": "^0.14.1",
-    "tslib": "^2.3.1",
+    "prettier": "^2.5.1",
+    "tsc-watch": "^4.6.0",
     "typescript": "^4.5.4"
   },
   "dependencies": {
