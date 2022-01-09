@@ -134,6 +134,7 @@ async function updateSubdomainIp() {
   }
 
   if (Object.keys(records).length) {
+    console.log('new records', records)
     console.log(`updating out of date ${Object.keys(records).join(' ')} records`)
     await createNewSubdomainRecords({ ...records, subdomain })
   }
