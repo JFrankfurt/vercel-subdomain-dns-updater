@@ -4,12 +4,9 @@ FROM node:latest
 WORKDIR /usr/src/app
 
 # Install app dependencies
-COPY package.json ./
-COPY yarn.lock ./
+COPY . .
 
 RUN yarn
 RUN yarn build
 
-COPY . .
-
-CMD [ "yarn", "dev" ]
+CMD [ "yarn", "start" ]
